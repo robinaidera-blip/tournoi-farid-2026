@@ -782,11 +782,22 @@ let DATA = null;
   <div id="login-overlay" onclick="handleOverlayClick(event)">
     <div id="modal-box">
       <h2>Connexion Admin</h2>
-      <input id="modal-pwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')confirmLogin()">
-      <div id="modal-error"></div>
-      <div id="modal-actions">
-        <button id="btn-modal-cancel" onclick="closeLoginModal()">Annuler</button>
-        <button id="btn-modal-confirm" onclick="confirmLogin()">Se connecter</button>
+      <div id="modal-step1">
+        <input id="modal-pwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')confirmLogin()">
+        <div id="modal-error"></div>
+        <div id="modal-actions">
+          <button id="btn-modal-cancel" onclick="closeLoginModal()">Annuler</button>
+          <button id="btn-modal-confirm" onclick="confirmLogin()">Se connecter</button>
+        </div>
+      </div>
+      <div id="modal-step2" style="display:none;">
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;">Première connexion sur cet appareil. Entrez le token GitHub pour activer la sync des scores.</p>
+        <input id="modal-token" type="password" placeholder="github_pat_..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 14px;font-family:'DM Sans',sans-serif;margin-bottom:8px;">
+        <div id="modal-token-error" style="color:var(--red);font-size:13px;min-height:18px;margin-bottom:14px;"></div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="skipToken()" style="flex:1;background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:10px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Ignorer</button>
+          <button onclick="saveToken()" style="flex:1;background:var(--blue);border:none;color:#fff;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Enregistrer</button>
+        </div>
       </div>
     </div>
   </div>
@@ -921,7 +932,6 @@ let state = {
 };
 
 const GH = {
-  token: atob('Z2l0aHViX3BhdF8xMUNETzVJWkEwNmoxaks1clhsbW5lX3ZzOEMzVUducWdEYlk4c0w2UEkwNnVnZmg5N1Z1V3lTaW5aSHo1RVR6NDlYSU1IQ1ZRN1RIUXhWc2oz'),
   owner: 'robinaidera-blip',
   repo:  'tournoi-farid-2026',
   file:  'data.json'
@@ -1533,6 +1543,12 @@ function openLoginModal() {
 
 function closeLoginModal() {
   document.getElementById('login-overlay').classList.remove('open');
+  // Réinitialiser le modal au step 1
+  document.getElementById('modal-step1').style.display = 'block';
+  document.getElementById('modal-step2').style.display = 'none';
+  document.getElementById('modal-box').querySelector('h2').textContent = 'Connexion Admin';
+  document.getElementById('modal-pwd').value = '';
+  document.getElementById('modal-error').textContent = '';
 }
 
 function handleOverlayClick(e) {
@@ -1544,18 +1560,46 @@ async function confirmLogin() {
   if (!pwd) return;
   const hash = await sha256(pwd);
   if (hash === state.ADMIN_HASH) {
-    state.adminMode = true;
-    sessionStorage.setItem('admin_mode', 'true');
-    document.getElementById('admin-badge').style.display = 'inline-block';
-    document.getElementById('btn-logout').style.display = 'inline-flex';
-    document.getElementById('btn-login').style.display = 'none';
-    closeLoginModal();
-    renderActiveTab();
+    if (!localStorage.getItem('gh_token')) {
+      // Première connexion sur cet appareil : demander le token
+      document.getElementById('modal-step1').style.display = 'none';
+      document.getElementById('modal-step2').style.display = 'block';
+      document.getElementById('modal-box').querySelector('h2').textContent = 'Token GitHub';
+      setTimeout(() => document.getElementById('modal-token').focus(), 100);
+    } else {
+      closeLoginModal();
+      activateAdmin();
+    }
   } else {
     document.getElementById('modal-error').textContent = 'Mot de passe incorrect.';
     document.getElementById('modal-pwd').value = '';
     document.getElementById('modal-pwd').focus();
   }
+}
+
+function activateAdmin() {
+  state.adminMode = true;
+  sessionStorage.setItem('admin_mode', 'true');
+  document.getElementById('admin-badge').style.display = 'inline-block';
+  document.getElementById('btn-logout').style.display = 'inline-flex';
+  document.getElementById('btn-login').style.display = 'none';
+  renderActiveTab();
+}
+
+function saveToken() {
+  const token = document.getElementById('modal-token').value.trim();
+  if (!token || !token.startsWith('github_pat_')) {
+    document.getElementById('modal-token-error').textContent = 'Token invalide (doit commencer par github_pat_).';
+    return;
+  }
+  localStorage.setItem('gh_token', token);
+  closeLoginModal();
+  activateAdmin();
+}
+
+function skipToken() {
+  closeLoginModal();
+  activateAdmin();
 }
 
 function logoutAdmin() {
@@ -1571,30 +1615,30 @@ function logoutAdmin() {
    GITHUB API — push data.json après chaque score
    ------------------------------------------------------------------ */
 async function pushToGitHub(matchId) {
+  const token = localStorage.getItem('gh_token');
+  if (!token) {
+    showToast('Sync désactivée — configure le token GitHub à la connexion', true);
+    return;
+  }
   try {
     const headers = {
-      Authorization: `Bearer ${GH.token}`,
+      Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json'
     };
-    const metaRes = await fetch(
-      `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`,
-      { headers }
-    );
+    const apiBase = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
+    const metaRes = await fetch(apiBase, { headers });
     const meta = await metaRes.json();
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(DATA, null, 2))));
-    const pushRes = await fetch(
-      `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`,
-      {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          message: `Score: ${matchId} — ${new Date().toLocaleTimeString('fr-FR')}`,
-          content,
-          sha: meta.sha
-        })
-      }
-    );
+    const pushRes = await fetch(apiBase, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        message: `Score: ${matchId} — ${new Date().toLocaleTimeString('fr-FR')}`,
+        content,
+        sha: meta.sha
+      })
+    });
     if (!pushRes.ok) throw new Error(pushRes.status);
     showToast('✓ Score enregistré');
   } catch(e) {
