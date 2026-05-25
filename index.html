@@ -865,6 +865,7 @@ let DATA = null;
       <p style="margin-top:6px;">Dernière mise à jour : <strong id="info-updated">—</strong></p>
     </div>
     <button id="btn-export" onclick="exportJSON()">Sauvegarder data.json (Admin)</button>
+    <button id="btn-reset-token" onclick="resetToken()" style="display:none;width:calc(100% - 24px);margin:6px 12px 0;background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:10px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">🔑 Modifier la clé GitHub</button>
     <div class="info-footer">
       Tableau de bord by <a href="https://votre-studio-ia.fr" target="_blank">Aidera</a> · Votre Studio IA
     </div>
@@ -1508,6 +1509,7 @@ function renderInfos() {
   document.getElementById('info-updated').textContent = formatDate(DATA.meta.last_updated);
   if (state.adminMode) {
     document.getElementById('btn-export').style.display = 'block';
+    document.getElementById('btn-reset-token').style.display = 'block';
   }
 }
 
@@ -1602,6 +1604,12 @@ function skipToken() {
   activateAdmin();
 }
 
+function resetToken() {
+  localStorage.removeItem('gh_token');
+  logoutAdmin();
+  setTimeout(() => openLoginModal(), 100);
+}
+
 function logoutAdmin() {
   state.adminMode = false;
   sessionStorage.removeItem('admin_mode');
@@ -1617,33 +1625,37 @@ function logoutAdmin() {
 async function pushToGitHub(matchId) {
   const token = localStorage.getItem('gh_token');
   if (!token) {
-    showToast('Sync désactivée — configure le token GitHub à la connexion', true);
+    showToast('Token manquant — déconnecte-toi et reconnecte-toi pour le configurer', true);
     return;
   }
   try {
-    const headers = {
+    const authHeaders = {
       Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json'
+      Accept: 'application/vnd.github+json'
     };
     const apiBase = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
-    const metaRes = await fetch(apiBase, { headers });
+    const metaRes = await fetch(apiBase, { headers: authHeaders });
+    if (!metaRes.ok) {
+      throw new Error('GET ' + metaRes.status + (metaRes.status === 401 ? ' — token invalide ou révoqué' : ''));
+    }
     const meta = await metaRes.json();
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(DATA, null, 2))));
     const pushRes = await fetch(apiBase, {
       method: 'PUT',
-      headers,
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: `Score: ${matchId} — ${new Date().toLocaleTimeString('fr-FR')}`,
         content,
         sha: meta.sha
       })
     });
-    if (!pushRes.ok) throw new Error(pushRes.status);
+    if (!pushRes.ok) {
+      throw new Error('PUT ' + pushRes.status);
+    }
     showToast('✓ Score enregistré');
   } catch(e) {
     console.error('[Aidera] Push GitHub échoué:', e);
-    showToast('Score local OK — sync GitHub échouée', true);
+    showToast('Sync échouée : ' + e.message, true);
   }
 }
 
