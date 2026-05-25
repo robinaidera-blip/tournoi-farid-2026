@@ -131,7 +131,7 @@
     /* =====================================================================
        MODAL CONNEXION ADMIN
        ===================================================================== */
-    #modal-overlay {
+    #login-overlay {
       display: none;
       position: fixed;
       inset: 0;
@@ -140,7 +140,7 @@
       align-items: center;
       justify-content: center;
     }
-    #modal-overlay.open { display: flex; }
+    #login-overlay.open { display: flex; }
     #modal-box {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -779,7 +779,7 @@ let DATA = null;
   </div>
 
   <!-- Modal connexion admin -->
-  <div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="login-overlay" onclick="handleOverlayClick(event)">
     <div id="modal-box">
       <h2>Connexion Admin</h2>
       <input id="modal-pwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')confirmLogin()">
@@ -855,7 +855,7 @@ let DATA = null;
     </div>
     <button id="btn-export" onclick="exportJSON()">Sauvegarder data.json (Admin)</button>
     <div class="info-footer">
-      Tableau de bord by <a href="https://optim-ia.fr" target="_blank">Optim'IA</a> · Votre Studio IA
+      Tableau de bord by <a href="https://votre-studio-ia.fr" target="_blank">Aidera</a> · Votre Studio IA
     </div>
   </div>
 
@@ -918,6 +918,13 @@ let state = {
   footerTapTimer: null,
   // SHA-256 de "optim25"
   ADMIN_HASH: 'e9b3ec990fff8d0c97b16db103469b0efb91b6d12b797be1de22c0c93170107c'
+};
+
+const GH = {
+  token: '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',
+  owner: 'robinaidera-blip',
+  repo:  'tournoi-farid-2026',
+  file:  'data.json'
 };
 
 /* ------------------------------------------------------------------
@@ -1262,7 +1269,7 @@ function toggleScoreForm(matchId, event) {
   }
 }
 
-function validateScore(matchId, event) {
+async function validateScore(matchId, event) {
   if (event) event.stopPropagation();
   const homeInput = document.getElementById('score-home-' + matchId);
   const awayInput = document.getElementById('score-away-' + matchId);
@@ -1281,9 +1288,9 @@ function validateScore(matchId, event) {
   document.getElementById('last-updated-label').textContent = formatDate(DATA.meta.last_updated);
   detectPhase();
   renderMatches();
-  // Rafraîchir les autres onglets si nécessaires
   if (state.activeTab === 'standings') renderStandings();
   if (state.activeTab === 'bracket') renderBracket();
+  await pushToGitHub(matchId);
 }
 
 /* ------------------------------------------------------------------
@@ -1520,16 +1527,16 @@ function openLoginModal() {
   if (state.adminMode) return;
   document.getElementById('modal-pwd').value = '';
   document.getElementById('modal-error').textContent = '';
-  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('login-overlay').classList.add('open');
   setTimeout(() => document.getElementById('modal-pwd').focus(), 100);
 }
 
 function closeLoginModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('login-overlay').classList.remove('open');
 }
 
 function handleOverlayClick(e) {
-  if (e.target === document.getElementById('modal-overlay')) closeLoginModal();
+  if (e.target === document.getElementById('login-overlay')) closeLoginModal();
 }
 
 async function confirmLogin() {
@@ -1558,6 +1565,53 @@ function logoutAdmin() {
   document.getElementById('btn-logout').style.display = 'none';
   document.getElementById('btn-login').style.display = 'flex';
   renderActiveTab();
+}
+
+/* ------------------------------------------------------------------
+   GITHUB API — push data.json après chaque score
+   ------------------------------------------------------------------ */
+async function pushToGitHub(matchId) {
+  try {
+    const headers = {
+      Authorization: `Bearer ${GH.token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    };
+    const metaRes = await fetch(
+      `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`,
+      { headers }
+    );
+    const meta = await metaRes.json();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(DATA, null, 2))));
+    const pushRes = await fetch(
+      `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`,
+      {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          message: `Score: ${matchId} — ${new Date().toLocaleTimeString('fr-FR')}`,
+          content,
+          sha: meta.sha
+        })
+      }
+    );
+    if (!pushRes.ok) throw new Error(pushRes.status);
+    showToast('✓ Score enregistré');
+  } catch(e) {
+    console.error('[Aidera] Push GitHub échoué:', e);
+    showToast('Score local OK — sync GitHub échouée', true);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const old = document.getElementById('toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'toast';
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:${isError ? '#DC2626' : '#059669'};color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:500;white-space:nowrap;pointer-events:none;transition:opacity 0.3s;`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 
 /* ------------------------------------------------------------------
