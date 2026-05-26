@@ -710,8 +710,8 @@ const FIREBASE_CONFIG = {
   appId:             '1:173449763815:web:211a810f7b68e0d4b7bb42'
 };
 
-const ADMIN_EMAIL = 'robin.aidera@gmail.com';
-const ADMIN_PWD   = 'ClaudeLeMeilleur';
+const ADMIN_EMAIL = 'admin-tournoi@aidera-tournois.fr';
+const ADMIN_PWD   = '@RVNNjZtDSGj5VSrA!tn';
 </script>
 
 <div id="app">
@@ -871,8 +871,10 @@ async function init() {
 
   await refreshData();
 
-  // Polling 30s pour les spectateurs (pas de WebSocket — compatible 300+ appareils)
-  setInterval(() => { if (!state.adminMode) refreshData(); }, 30000);
+  // Polling 30s — actif même en admin, sauf si une saisie de score est en cours
+  setInterval(() => {
+    if (!document.querySelector('.score-form.visible')) refreshData();
+  }, 30000);
 
   // Restaurer session admin si token Firebase encore valide
   _auth.onAuthStateChanged((user) => {
@@ -1212,6 +1214,18 @@ function renderMatchCard(m, isCurrentSlot) {
           <button class="btn-validate" onclick="validateScore('${m.id}',event)">OK</button>
         </div>
       </div>`;
+  } else if (state.adminMode && isPlayed) {
+    adminBtn = '<button class="btn-saisir" style="border-color:var(--gold);color:var(--gold);" onclick="toggleScoreForm(\'' + m.id + '\',event)">Modifier</button>';
+    scoreFormHtml = `
+      <div class="score-form" id="form-${m.id}">
+        <input class="score-input" type="number" min="0" max="99" id="score-home-${m.id}" placeholder="0" value="${m.home_score ?? ''}">
+        <span class="score-form-sep">–</span>
+        <input class="score-input" type="number" min="0" max="99" id="score-away-${m.id}" placeholder="0" value="${m.away_score ?? ''}">
+        <div class="score-form-actions">
+          <button class="btn-cancel-score" onclick="toggleScoreForm('${m.id}',event)">✕</button>
+          <button class="btn-validate" onclick="validateScore('${m.id}',event)">OK</button>
+        </div>
+      </div>`;
   }
 
   const homeClick = homeId ? `onclick="filterByTeam('${homeId}')"` : '';
@@ -1263,6 +1277,9 @@ async function validateScore(matchId, event) {
   }
   const m = DATA.matches.find(x => x.id === matchId);
   if (!m) return;
+  const homeName = DATA.teams[m.home] ? DATA.teams[m.home].name : resolveTeam(m.home).label;
+  const awayName = DATA.teams[m.away] ? DATA.teams[m.away].name : resolveTeam(m.away).label;
+  if (!confirm(`Confirmer le score ?\n\n${homeName}  ${hs} – ${as_}  ${awayName}`)) return;
   m.home_score = hs;
   m.away_score = as_;
   m.status = 'played';
@@ -1434,6 +1451,18 @@ function renderBracket() {
             <input class="score-input" type="number" min="0" max="99" id="score-home-${m.id}" placeholder="0">
             <span class="score-form-sep">–</span>
             <input class="score-input" type="number" min="0" max="99" id="score-away-${m.id}" placeholder="0">
+            <div class="score-form-actions">
+              <button class="btn-cancel-score" onclick="toggleScoreForm('${m.id}',event)">✕</button>
+              <button class="btn-validate" onclick="validateScore('${m.id}',event)">OK</button>
+            </div>
+          </div>`;
+      } else if (state.adminMode && isPlayed) {
+        adminBtn = `<button class="btn-saisir" style="margin-left:8px;border-color:var(--gold);color:var(--gold);" onclick="toggleScoreForm('${m.id}',event)">Modifier</button>`;
+        scoreFormHtml = `
+          <div class="score-form" id="form-${m.id}" style="padding:8px 10px 10px;border-top:1px solid var(--border);gap:8px;">
+            <input class="score-input" type="number" min="0" max="99" id="score-home-${m.id}" placeholder="0" value="${m.home_score ?? ''}">
+            <span class="score-form-sep">–</span>
+            <input class="score-input" type="number" min="0" max="99" id="score-away-${m.id}" placeholder="0" value="${m.away_score ?? ''}">
             <div class="score-form-actions">
               <button class="btn-cancel-score" onclick="toggleScoreForm('${m.id}',event)">✕</button>
               <button class="btn-validate" onclick="validateScore('${m.id}',event)">OK</button>
