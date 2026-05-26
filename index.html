@@ -1409,13 +1409,28 @@ function closeModal(event) {
 function renderBracket() {
   const container = document.getElementById('bracket-content');
 
-  if (state.phase === 'groups') {
-    container.innerHTML = `
-      <div class="bracket-placeholder">
-        <div style="font-size:32px;margin-bottom:12px;">⏳</div>
-        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Bracket disponible après les poules</div>
-        <div>Les phases finales démarreront après la fin des matchs de poule.<br>Rendez-vous vers <strong>14h30</strong> !</div>
-      </div>`;
+  if (state.phase === 'groups' || state.phase === 'groups_done') {
+    const groupMatches = DATA.matches.filter(m => m.group === 'A' || m.group === 'B');
+    const allDone = groupMatches.every(m => m.status === 'played' || m.status === 'forfeit');
+
+    if (state.adminMode && allDone) {
+      container.innerHTML = `
+        <div class="bracket-placeholder">
+          <div style="font-size:32px;margin-bottom:12px;">🏆</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Tous les matchs de poule sont terminés !</div>
+          <div style="margin-bottom:20px;">Clique sur le bouton pour afficher le bracket et démarrer la phase finale.</div>
+          <button onclick="launchKnockout()" style="background:var(--gold);color:#000;border:none;border-radius:10px;padding:14px 28px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;width:100%;">
+            Lancer la phase finale
+          </button>
+        </div>`;
+    } else {
+      container.innerHTML = `
+        <div class="bracket-placeholder">
+          <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Bracket disponible après les poules</div>
+          <div>Les phases finales démarreront après la fin des matchs de poule.<br>Rendez-vous vers <strong>14h30</strong> !</div>
+        </div>`;
+    }
     return;
   }
 
@@ -1570,6 +1585,20 @@ function activateAdmin() {
   document.getElementById('btn-logout').style.display  = 'inline-flex';
   document.getElementById('btn-login').style.display   = 'none';
   renderActiveTab();
+}
+
+async function launchKnockout() {
+  if (!confirm('Lancer la phase finale ?\n\nLe bracket va s\'afficher pour tous les spectateurs.')) return;
+  try {
+    await _db.ref(`tournois/${TOURNOI_ID}/meta`).update({
+      current_phase: 'knockout',
+      last_updated: new Date().toISOString().slice(0, 19)
+    });
+    showToast('Phase finale lancée !');
+    await refreshData();
+  } catch(e) {
+    showToast('Erreur : ' + e.message, true);
+  }
 }
 
 async function logoutAdmin() {
