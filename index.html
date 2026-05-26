@@ -710,8 +710,6 @@ const FIREBASE_CONFIG = {
   appId:             '1:173449763815:web:211a810f7b68e0d4b7bb42'
 };
 
-const ADMIN_EMAIL = 'robinpalau@hotmail.fr';
-const ADMIN_PWD   = 'Claude2.0';
 </script>
 
 <div id="app">
@@ -1569,7 +1567,7 @@ async function confirmLogin() {
   document.getElementById('modal-error').textContent = 'Connexion en cours…';
   document.getElementById('btn-modal-confirm').disabled = true;
   try {
-    await _auth.signInWithEmailAndPassword(ADMIN_EMAIL, ADMIN_PWD);
+    await _auth.signInAnonymously();
     closeLoginModal();
     activateAdmin();
   } catch(e) {
