@@ -7,10 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK (compat — pas besoin de module, fonctions globales) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
   <style>
-    /* =====================================================================
-       RESET & BASE
-       ===================================================================== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg:       #0D1117;
@@ -36,19 +39,11 @@
     h1, h2, h3, .score, .tab-label {
       font-family: 'Syne', sans-serif;
     }
-
-    /* =====================================================================
-       LAYOUT
-       ===================================================================== */
     #app {
       max-width: 480px;
       margin: 0 auto;
-      padding-bottom: 72px; /* space for bottom nav */
+      padding-bottom: 72px;
     }
-
-    /* =====================================================================
-       HEADER
-       ===================================================================== */
     #header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -127,10 +122,6 @@
       font-size: 12px;
       color: var(--text-dim);
     }
-
-    /* =====================================================================
-       MODAL CONNEXION ADMIN
-       ===================================================================== */
     #login-overlay {
       display: none;
       position: fixed;
@@ -200,10 +191,6 @@
       font-family: 'DM Sans', sans-serif;
     }
     #btn-modal-confirm:active { opacity: 0.8; }
-
-    /* =====================================================================
-       BOTTOM NAVIGATION
-       ===================================================================== */
     #bottom-nav {
       position: fixed;
       bottom: 0;
@@ -241,16 +228,8 @@
     }
     .nav-tab svg { width: 20px; height: 20px; }
     .tab-label { font-size: 11px; font-weight: 600; letter-spacing: 0.2px; }
-
-    /* =====================================================================
-       PANELS
-       ===================================================================== */
     .panel { display: none; padding: 0 0 8px; }
     .panel.active { display: block; }
-
-    /* =====================================================================
-       SECTION HEADERS
-       ===================================================================== */
     .section-title {
       font-size: 11px;
       font-weight: 700;
@@ -259,10 +238,6 @@
       color: var(--text-dim);
       padding: 14px 16px 6px;
     }
-
-    /* =====================================================================
-       MATCH CARDS
-       ===================================================================== */
     .match-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -275,7 +250,6 @@
     .match-card:active { border-color: var(--blue); }
     .match-card.live { border-color: var(--green); }
     .match-card.current-slot { border-color: var(--blue); background: #161e2e; }
-
     .match-meta {
       display: flex;
       align-items: center;
@@ -303,12 +277,10 @@
     .badge-qualif   { background: #063a1e; color: #34d399; }
     .badge-admin    { background: var(--gold); color: #000; }
     .badge-tas      { background: #422006; color: var(--gold); }
-
     @keyframes pulse-badge {
       0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.7); }
       50%       { box-shadow: 0 0 0 5px rgba(5,150,105,0); }
     }
-
     .match-teams {
       display: flex;
       align-items: center;
@@ -337,8 +309,6 @@
       flex-shrink: 0;
     }
     .match-score.pending { color: var(--text-dim); font-size: 20px; }
-
-    /* Score entry form (admin) */
     .score-form {
       display: none;
       margin-top: 10px;
@@ -402,10 +372,6 @@
       margin-left: auto;
     }
     .btn-saisir:active { opacity: 0.7; }
-
-    /* =====================================================================
-       FILTER BUTTONS
-       ===================================================================== */
     .filter-bar {
       display: flex;
       gap: 8px;
@@ -433,10 +399,6 @@
       border-color: var(--blue);
       color: #fff;
     }
-
-    /* =====================================================================
-       STANDINGS TABLE
-       ===================================================================== */
     .poule-tabs {
       display: flex;
       gap: 0;
@@ -462,7 +424,6 @@
       background: var(--blue);
       color: #fff;
     }
-
     .standings-table {
       width: calc(100% - 24px);
       margin: 10px 12px 0;
@@ -519,10 +480,6 @@
     }
     .gd-cell.pos { color: var(--green); }
     .gd-cell.neg { color: var(--red); }
-
-    /* =====================================================================
-       BRACKET
-       ===================================================================== */
     .bracket-section {
       margin: 12px 12px 0;
     }
@@ -588,10 +545,6 @@
       line-height: 1.6;
       margin: 12px;
     }
-
-    /* =====================================================================
-       MODAL
-       ===================================================================== */
     #modal-overlay {
       display: none;
       position: fixed;
@@ -665,10 +618,6 @@
       cursor: pointer;
       min-height: 44px;
     }
-
-    /* =====================================================================
-       INFOS TAB
-       ===================================================================== */
     .info-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -713,20 +662,12 @@
       min-height: 44px;
     }
     #btn-export:active { opacity: 0.85; }
-
-    /* =====================================================================
-       EMPTY STATE
-       ===================================================================== */
     .empty-state {
       text-align: center;
       padding: 32px 16px;
       color: var(--text-dim);
       font-size: 14px;
     }
-
-    /* =====================================================================
-       ACTIVE FILTER STRIP
-       ===================================================================== */
     #active-filter-strip {
       display: none;
       align-items: center;
@@ -753,20 +694,28 @@
 </head>
 <body>
 
-<!-- =====================================================================
-     DONNÉES DU TOURNOI — dans data.json (ne pas modifier ce bloc)
-     ===================================================================== -->
 <script>
-let DATA = null;
+/* ------------------------------------------------------------------
+   CONFIG FIREBASE — À remplir après setup console.firebase.google.com
+   ------------------------------------------------------------------ */
+const TOURNOI_ID  = 'farid-juin-2026';
 
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyC9zwhQi-cZ0TR8pdeM5ePQZcgnNiDcyG8',
+  authDomain:        'aidera-tournois.firebaseapp.com',
+  databaseURL:       'https://aidera-tournois-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId:         'aidera-tournois',
+  storageBucket:     'aidera-tournois.firebasestorage.app',
+  messagingSenderId: '173449763815',
+  appId:             '1:173449763815:web:211a810f7b68e0d4b7bb42'
+};
+
+const ADMIN_EMAIL = 'robin.aidera@gmail.com';
+const ADMIN_PWD   = 'ClaudeLeMeilleur';
 </script>
 
-<!-- =====================================================================
-     STRUCTURE HTML
-     ===================================================================== -->
 <div id="app">
 
-  <!-- Header -->
   <div id="header">
     <div id="header-top">
       <h1 id="header-title">Tournoi Foot à 7 — Annecy</h1>
@@ -778,31 +727,18 @@ let DATA = null;
     <div id="header-sub">Mis à jour : <span id="last-updated-label">—</span></div>
   </div>
 
-  <!-- Modal connexion admin -->
   <div id="login-overlay" onclick="handleOverlayClick(event)">
     <div id="modal-box">
       <h2>Connexion Admin</h2>
-      <div id="modal-step1">
-        <input id="modal-pwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')confirmLogin()">
-        <div id="modal-error"></div>
-        <div id="modal-actions">
-          <button id="btn-modal-cancel" onclick="closeLoginModal()">Annuler</button>
-          <button id="btn-modal-confirm" onclick="confirmLogin()">Se connecter</button>
-        </div>
-      </div>
-      <div id="modal-step2" style="display:none;">
-        <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;">Première connexion sur cet appareil. Entrez le token GitHub pour activer la sync des scores.</p>
-        <input id="modal-token" type="password" placeholder="github_pat_..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 14px;font-family:'DM Sans',sans-serif;margin-bottom:8px;">
-        <div id="modal-token-error" style="color:var(--red);font-size:13px;min-height:18px;margin-bottom:14px;"></div>
-        <div style="display:flex;gap:10px;">
-          <button onclick="skipToken()" style="flex:1;background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:10px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;">Ignorer</button>
-          <button onclick="saveToken()" style="flex:1;background:var(--blue);border:none;color:#fff;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Enregistrer</button>
-        </div>
+      <input id="modal-pwd" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')confirmLogin()">
+      <div id="modal-error"></div>
+      <div id="modal-actions">
+        <button id="btn-modal-cancel" onclick="closeLoginModal()">Annuler</button>
+        <button id="btn-modal-confirm" onclick="confirmLogin()">Se connecter</button>
       </div>
     </div>
   </div>
 
-  <!-- Panel Matchs -->
   <div id="panel-matches" class="panel active">
     <div class="filter-bar">
       <button class="filter-btn active" data-phase="all" onclick="filterPhase(this,'all')">Tous</button>
@@ -816,7 +752,6 @@ let DATA = null;
     <div id="matches-list"></div>
   </div>
 
-  <!-- Panel Poules -->
   <div id="panel-standings" class="panel">
     <div class="poule-tabs">
       <button class="poule-tab active" onclick="switchPoule(this,'A')">Poule A</button>
@@ -825,12 +760,10 @@ let DATA = null;
     <div id="standings-content"></div>
   </div>
 
-  <!-- Panel Bracket -->
   <div id="panel-bracket" class="panel">
     <div id="bracket-content"></div>
   </div>
 
-  <!-- Panel Infos -->
   <div id="panel-infos" class="panel">
     <div class="section-title" style="padding-top:16px;">Règlement</div>
     <div class="info-card">
@@ -865,7 +798,6 @@ let DATA = null;
       <p style="margin-top:6px;">Dernière mise à jour : <strong id="info-updated">—</strong></p>
     </div>
     <button id="btn-export" onclick="exportJSON()">Sauvegarder data.json (Admin)</button>
-    <button id="btn-reset-token" onclick="resetToken()" style="display:none;width:calc(100% - 24px);margin:6px 12px 0;background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:10px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">🔑 Modifier la clé GitHub</button>
     <div class="info-footer">
       Tableau de bord by <a href="https://votre-studio-ia.fr" target="_blank">Aidera</a> · Votre Studio IA
     </div>
@@ -873,7 +805,6 @@ let DATA = null;
 
 </div>
 
-<!-- Bottom Navigation -->
 <nav id="bottom-nav">
   <button class="nav-tab active" onclick="switchTab('matches',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -902,7 +833,6 @@ let DATA = null;
   </button>
 </nav>
 
-<!-- Modal équipe -->
 <div id="modal-overlay" onclick="closeModal(event)">
   <div id="modal">
     <div id="modal-handle"></div>
@@ -912,46 +842,112 @@ let DATA = null;
   </div>
 </div>
 
-<!-- =====================================================================
-     LOGIQUE JAVASCRIPT
-     ===================================================================== -->
 <script>
 /* ------------------------------------------------------------------
    ÉTAT GLOBAL
    ------------------------------------------------------------------ */
+let DATA = null;
+let _db   = null;
+let _auth = null;
+
 let state = {
-  activeTab: 'matches',
-  phaseFilter: 'all',
-  teamFilter: null,
-  activePoule: 'A',
-  adminMode: false,
-  phase: 'groups',
-  footerTapCount: 0,
-  footerTapTimer: null,
+  activeTab:    'matches',
+  phaseFilter:  'all',
+  teamFilter:   null,
+  activePoule:  'A',
+  adminMode:    false,
+  phase:        'groups',
   // SHA-256 de "optim25"
   ADMIN_HASH: 'e9b3ec990fff8d0c97b16db103469b0efb91b6d12b797be1de22c0c93170107c'
 };
 
-const GH = {
-  owner: 'robinaidera-blip',
-  repo:  'tournoi-farid-2026',
-  file:  'data.json'
-};
+/* ------------------------------------------------------------------
+   INIT FIREBASE + CHARGEMENT
+   ------------------------------------------------------------------ */
+async function init() {
+  const app = firebase.initializeApp(FIREBASE_CONFIG);
+  _db   = firebase.database();
+  _auth = firebase.auth();
+
+  await refreshData();
+
+  // Polling 30s pour les spectateurs (pas de WebSocket — compatible 300+ appareils)
+  setInterval(() => { if (!state.adminMode) refreshData(); }, 30000);
+
+  // Restaurer session admin si token Firebase encore valide
+  _auth.onAuthStateChanged((user) => {
+    if (user && sessionStorage.getItem('admin_mode') === 'true') activateAdmin();
+  });
+}
+
+async function refreshData() {
+  try {
+    const snapshot = await _db.ref(`tournois/${TOURNOI_ID}`).get();
+    const raw = snapshot.val();
+    if (!raw) {
+      document.getElementById('matches-list').innerHTML =
+        '<p style="padding:24px;color:var(--red)">Données introuvables. Vérifier Firebase.</p>';
+      return;
+    }
+    DATA = {
+      ...raw,
+      matches: Object.entries(raw.matches)
+        .map(([id, m]) => ({
+          id,
+          ...m,
+          // Firebase supprime les null — on les restaure
+          home_score: m.home_score ?? null,
+          away_score: m.away_score ?? null,
+          penalty_winner: m.penalty_winner ?? null
+        }))
+        .sort((a, b) => a.slot.padStart(5, '0').localeCompare(b.slot.padStart(5, '0')))
+    };
+    state.phase = DATA.meta.current_phase;
+    detectPhase();
+    document.getElementById('last-updated-label').textContent = formatDate(DATA.meta.last_updated);
+    document.getElementById('header-title').textContent = DATA.meta.tournament_name;
+    renderActiveTab();
+  } catch(e) {
+    console.warn('[Aidera] Refresh échoué:', e);
+    showToast('Erreur de chargement', true);
+  }
+}
 
 /* ------------------------------------------------------------------
-   DÉTECTION DE PHASE AUTOMATIQUE
+   FIREBASE — push score après saisie admin
+   ------------------------------------------------------------------ */
+async function pushToFirebase(matchId) {
+  const m = DATA.matches.find(x => x.id === matchId);
+  if (!m) return;
+  try {
+    await _db.ref(`tournois/${TOURNOI_ID}/matches/${matchId}`).update({
+      home_score:  m.home_score,
+      away_score:  m.away_score,
+      status:      m.status
+    });
+    await _db.ref(`tournois/${TOURNOI_ID}/meta`).update({
+      last_updated: new Date().toISOString().slice(0, 19)
+    });
+    showToast('Score enregistré');
+  } catch(e) {
+    console.error('[Aidera] Push Firebase échoué:', e);
+    showToast('Sync échouée : ' + e.message, true);
+  }
+}
+
+/* ------------------------------------------------------------------
+   DÉTECTION DE PHASE
    ------------------------------------------------------------------ */
 function detectPhase() {
   const groupMatches = DATA.matches.filter(m => m.group === 'A' || m.group === 'B');
   const allPlayed = groupMatches.every(m => m.status === 'played' || m.status === 'forfeit');
   if (allPlayed && state.phase === 'groups') {
-    console.warn('[OPTIM\'IA] Tous les matchs de poule sont joués mais current_phase est encore "groups". Override interne vers "groups_done". Pensez à mettre à jour le JSON.');
     state.phase = 'groups_done';
   }
 }
 
 /* ------------------------------------------------------------------
-   CLASSEMENT — computeStandings(group)
+   CLASSEMENT
    ------------------------------------------------------------------ */
 function computeStandings(group) {
   const teamIds = Object.keys(DATA.teams).filter(id => DATA.teams[id].group === group);
@@ -966,9 +962,8 @@ function computeStandings(group) {
     const h = m.home, a = m.away;
     if (!stats[h] || !stats[a]) return;
     let hs = m.home_score, as_ = m.away_score;
-    // Forfait : score officiel 3-0
     if (m.status === 'forfeit') { hs = 3; as_ = 0; }
-    if (hs === null || as_ === null) return;
+    if (hs == null || as_ == null) return;
 
     stats[h].played++; stats[a].played++;
     stats[h].goals_for += hs;    stats[h].goals_against += as_;
@@ -990,27 +985,23 @@ function computeStandings(group) {
     stats[id].goal_diff = stats[id].goals_for - stats[id].goals_against;
   });
 
-  const sorted = Object.values(stats).sort((a, b) => {
+  return Object.values(stats).sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.goal_diff !== a.goal_diff) return b.goal_diff - a.goal_diff;
     if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
-    // Confrontation directe
     const direct = getDirectResult(a.id, b.id, group);
-    if (direct !== 0) return -direct; // direct > 0 means a beat b
+    if (direct !== 0) return -direct;
     return 0;
   });
-
-  return sorted;
 }
 
 function getDirectResult(idA, idB, group) {
-  // Retourne >0 si A gagne, <0 si B gagne, 0 si nul/pas joué
   const m = DATA.matches.find(m =>
     m.group === group &&
     ((m.home === idA && m.away === idB) || (m.home === idB && m.away === idA)) &&
     (m.status === 'played' || m.status === 'forfeit')
   );
-  if (!m || m.home_score === null) return 0;
+  if (!m || m.home_score == null) return 0;
   let hs = m.home_score, as_ = m.away_score;
   if (m.status === 'forfeit') { hs = 3; as_ = 0; }
   if (m.home === idA) return hs > as_ ? 1 : (hs < as_ ? -1 : 0);
@@ -1018,16 +1009,12 @@ function getDirectResult(idA, idB, group) {
 }
 
 /* ------------------------------------------------------------------
-   BRACKET — resolveTeam / resolveBracket
+   BRACKET
    ------------------------------------------------------------------ */
-function resolveTeam(ref, group) {
-  // ref peut être: "T01", "1A", "winner_KA_QF1", "loser_KB_QF2", etc.
+function resolveTeam(ref) {
   if (!ref) return { team: null, label: '?' };
-
-  // Équipe directe
   if (DATA.teams[ref]) return { team: ref, label: DATA.teams[ref].name };
 
-  // Seed de classement: "1A", "2B", ...
   const seedMatch = ref.match(/^(\d+)([AB])$/);
   if (seedMatch) {
     const rank = parseInt(seedMatch[1]) - 1;
@@ -1040,7 +1027,6 @@ function resolveTeam(ref, group) {
     return { team: null, label: ref + ' (non déterminé)' };
   }
 
-  // winner_XXX ou loser_XXX
   const winnerMatch = ref.match(/^(winner|loser)_(.+)$/);
   if (winnerMatch) {
     const type = winnerMatch[1];
@@ -1050,14 +1036,12 @@ function resolveTeam(ref, group) {
       return { team: null, label: type === 'winner' ? 'Vainqueur ' + matchId : 'Perdant ' + matchId };
     }
     let hs = m.home_score, as_ = m.away_score;
-    if (hs === null || as_ === null) return { team: null, label: type === 'winner' ? 'Vainqueur ' + matchId : 'Perdant ' + matchId };
+    if (hs == null || as_ == null) return { team: null, label: type === 'winner' ? 'Vainqueur ' + matchId : 'Perdant ' + matchId };
 
-    // Penalty winner pour départage en finale
     let winnerId, loserId;
     if (hs > as_) { winnerId = m.home; loserId = m.away; }
     else if (as_ > hs) { winnerId = m.away; loserId = m.home; }
     else {
-      // Égalité : vérifier penalty_winner
       if (m.penalty_winner) {
         winnerId = m.penalty_winner;
         loserId = m.penalty_winner === m.home ? m.away : m.home;
@@ -1073,7 +1057,7 @@ function resolveTeam(ref, group) {
 }
 
 /* ------------------------------------------------------------------
-   NAVIGATION PAR ONGLETS
+   NAVIGATION
    ------------------------------------------------------------------ */
 function switchTab(tab, btn) {
   state.activeTab = tab;
@@ -1085,6 +1069,7 @@ function switchTab(tab, btn) {
 }
 
 function renderActiveTab() {
+  if (!DATA) return;
   switch(state.activeTab) {
     case 'matches':   renderMatches(); break;
     case 'standings': renderStandings(); break;
@@ -1119,12 +1104,11 @@ function clearTeamFilter() {
 }
 
 /* ------------------------------------------------------------------
-   RENDU ONGLET MATCHS
+   RENDU MATCHS
    ------------------------------------------------------------------ */
 function getCurrentSlot() {
   const now = new Date();
-  const h = now.getHours(), m = now.getMinutes();
-  const current = h * 60 + m;
+  const current = now.getHours() * 60 + now.getMinutes();
   const slots = ['10:00','10:15','10:30','10:45','11:00','11:15','11:30','11:45','12:00','12:15','12:30','12:45','13:00','13:15','14:30','15:30'];
   for (let i = 0; i < slots.length - 1; i++) {
     const [sh, sm] = slots[i].split(':').map(Number);
@@ -1138,14 +1122,12 @@ function renderMatches() {
   const container = document.getElementById('matches-list');
   let matches = [...DATA.matches];
 
-  // Filtre phase
   if (state.phaseFilter === 'groups') {
     matches = matches.filter(m => m.group === 'A' || m.group === 'B');
   } else if (state.phaseFilter === 'knockout') {
     matches = matches.filter(m => m.group !== 'A' && m.group !== 'B');
   }
 
-  // Filtre équipe
   if (state.teamFilter) {
     matches = matches.filter(m => m.home === state.teamFilter || m.away === state.teamFilter);
   }
@@ -1155,7 +1137,6 @@ function renderMatches() {
     return;
   }
 
-  // Grouper par créneau
   const bySlot = {};
   matches.forEach(m => {
     if (!bySlot[m.slot]) bySlot[m.slot] = [];
@@ -1164,12 +1145,10 @@ function renderMatches() {
 
   const currentSlot = getCurrentSlot();
   let html = '';
-  Object.keys(bySlot).sort().forEach(slot => {
+  Object.keys(bySlot).sort((a, b) => a.padStart(5,'0').localeCompare(b.padStart(5,'0'))).forEach(slot => {
     const isCurrent = slot === currentSlot;
     html += '<div class="section-title">' + (isCurrent ? '▶ ' : '') + slot + '</div>';
-    bySlot[slot].forEach(m => {
-      html += renderMatchCard(m, isCurrent);
-    });
+    bySlot[slot].forEach(m => { html += renderMatchCard(m, isCurrent); });
   });
 
   container.innerHTML = html;
@@ -1179,44 +1158,39 @@ function renderMatchCard(m, isCurrentSlot) {
   const homeTeam = DATA.teams[m.home];
   const awayTeam = DATA.teams[m.away];
 
-  // Résolution des noms pour les matchs knockout
   let homeName, awayName, homeId, awayId;
   if (homeTeam) {
     homeName = homeTeam.name; homeId = m.home;
   } else {
-    const resolved = resolveTeam(m.home, null);
+    const resolved = resolveTeam(m.home);
     homeName = resolved.label; homeId = resolved.team;
   }
   if (awayTeam) {
     awayName = awayTeam.name; awayId = m.away;
   } else {
-    const resolved = resolveTeam(m.away, null);
+    const resolved = resolveTeam(m.away);
     awayName = resolved.label; awayId = resolved.team;
   }
 
-  const isLive = m.status === 'live';
-  const isPlayed = m.status === 'played' || m.status === 'forfeit';
+  const isLive    = m.status === 'live';
+  const isPlayed  = m.status === 'played' || m.status === 'forfeit';
   const isForfeit = m.status === 'forfeit';
 
-  // Classes de la carte
   let cardClass = 'match-card';
   if (isLive) cardClass += ' live';
   else if (isCurrentSlot && m.status === 'scheduled') cardClass += ' current-slot';
 
-  // Badge statut
   let badgeHtml = '';
-  if (isForfeit)             badgeHtml = '<span class="badge badge-forfeit">FORFAIT</span>';
-  else if (isPlayed)         badgeHtml = '<span class="badge badge-played">JOUÉ</span>';
-  else if (isLive)           badgeHtml = '<span class="badge badge-live">EN COURS</span>';
-  else if (m.status === 'scheduled') badgeHtml = '<span class="badge badge-scheduled">À VENIR</span>';
-  else if (m.status === 'pending')   badgeHtml = '<span class="badge badge-pending">À VENIR</span>';
+  if (isForfeit)                       badgeHtml = '<span class="badge badge-forfeit">FORFAIT</span>';
+  else if (isPlayed)                   badgeHtml = '<span class="badge badge-played">JOUÉ</span>';
+  else if (isLive)                     badgeHtml = '<span class="badge badge-live">EN COURS</span>';
+  else if (m.status === 'scheduled')   badgeHtml = '<span class="badge badge-scheduled">À VENIR</span>';
+  else if (m.status === 'pending')     badgeHtml = '<span class="badge badge-pending">À VENIR</span>';
 
-  // Label du match (knockout)
   const matchLabel = m.label ? '<span style="font-size:11px;color:var(--text-dim);margin-left:auto;">' + m.label + '</span>' : '';
 
-  // Score
   let scoreHtml;
-  if (isPlayed && m.home_score !== null) {
+  if (isPlayed && m.home_score != null) {
     scoreHtml = '<span class="match-score">' + m.home_score + ' – ' + m.away_score + '</span>';
   } else if (isLive) {
     scoreHtml = '<span class="match-score" style="color:var(--green);">en cours</span>';
@@ -1224,7 +1198,6 @@ function renderMatchCard(m, isCurrentSlot) {
     scoreHtml = '<span class="match-score pending">–</span>';
   }
 
-  // Bouton saisir (admin, matchs non joués non pending depuis knockout résolu)
   let adminBtn = '';
   let scoreFormHtml = '';
   if (state.adminMode && m.status !== 'played' && m.status !== 'forfeit') {
@@ -1241,12 +1214,10 @@ function renderMatchCard(m, isCurrentSlot) {
       </div>`;
   }
 
-  // Noms cliquables pour filtrer
   const homeClick = homeId ? `onclick="filterByTeam('${homeId}')"` : '';
   const awayClick = awayId ? `onclick="filterByTeam('${awayId}')"` : '';
   const homeClass = homeId ? 'team-name home clickable' : 'team-name home';
   const awayClass = awayId ? 'team-name away clickable' : 'team-name away';
-
   const homeStyle = homeId ? '' : 'color:var(--text-dim);font-style:italic;';
   const awayStyle = awayId ? '' : 'color:var(--text-dim);font-style:italic;';
 
@@ -1284,7 +1255,7 @@ async function validateScore(matchId, event) {
   if (event) event.stopPropagation();
   const homeInput = document.getElementById('score-home-' + matchId);
   const awayInput = document.getElementById('score-away-' + matchId);
-  const hs = parseInt(homeInput.value);
+  const hs  = parseInt(homeInput.value);
   const as_ = parseInt(awayInput.value);
   if (isNaN(hs) || isNaN(as_) || hs < 0 || as_ < 0) {
     alert('Veuillez saisir des scores valides.');
@@ -1300,12 +1271,12 @@ async function validateScore(matchId, event) {
   detectPhase();
   renderMatches();
   if (state.activeTab === 'standings') renderStandings();
-  if (state.activeTab === 'bracket') renderBracket();
-  await pushToGitHub(matchId);
+  if (state.activeTab === 'bracket')   renderBracket();
+  await pushToFirebase(matchId);
 }
 
 /* ------------------------------------------------------------------
-   RENDU ONGLET POULES
+   RENDU POULES
    ------------------------------------------------------------------ */
 function switchPoule(btn, group) {
   state.activePoule = group;
@@ -1367,7 +1338,6 @@ function openTeamModal(teamId, group) {
   document.getElementById('modal-title').textContent = team.name;
 
   let html = '';
-  // Stats
   const statItems = [
     ['Classement', rank + (rank === 1 ? 'er' : 'e') + ' de Poule ' + group],
     ['Matchs joués', s.played],
@@ -1385,7 +1355,6 @@ function openTeamModal(teamId, group) {
   });
   html += '</div>';
 
-  // Matchs
   html += '<div style="font-size:12px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Matchs</div>';
   teamMatches.forEach(m => {
     const isHome = m.home === teamId;
@@ -1394,7 +1363,7 @@ function openTeamModal(teamId, group) {
     const hs = m.home_score, as_ = m.away_score;
     let scoreText = '– vs –';
     let resultColor = 'var(--text-dim)';
-    if (hs !== null && as_ !== null && (m.status === 'played' || m.status === 'forfeit')) {
+    if (hs != null && as_ != null && (m.status === 'played' || m.status === 'forfeit')) {
       const myGoals = isHome ? hs : as_;
       const oppGoals = isHome ? as_ : hs;
       scoreText = myGoals + ' – ' + oppGoals;
@@ -1418,13 +1387,12 @@ function closeModal(event) {
 }
 
 /* ------------------------------------------------------------------
-   RENDU ONGLET BRACKET
+   BRACKET
    ------------------------------------------------------------------ */
 function renderBracket() {
   const container = document.getElementById('bracket-content');
-  const phase = state.phase;
 
-  if (phase === 'groups') {
+  if (state.phase === 'groups') {
     container.innerHTML = `
       <div class="bracket-placeholder">
         <div style="font-size:32px;margin-bottom:12px;">⏳</div>
@@ -1434,12 +1402,11 @@ function renderBracket() {
     return;
   }
 
-  // Afficher les brackets
   const sections = [
-    { key: 'KA_CHAMP', title: 'Poule A — Champions', matchIds: ['KA_QF1','KA_QF2','KA_F','KA_3P'] },
-    { key: 'KA_EUROPA', title: 'Poule A — Europa League', matchIds: ['KA_EQF1','KA_EQF2','KA_EF','KA_E3P'] },
-    { key: 'KB_CHAMP', title: 'Poule B — Champions', matchIds: ['KB_QF1','KB_QF2','KB_F','KB_3P'] },
-    { key: 'KB_EUROPA', title: 'Poule B — Europa League', matchIds: ['KB_EQF1','KB_EQF2','KB_EF','KB_E3P'] }
+    { title: 'Poule A — Champions',      matchIds: ['KA_QF1','KA_QF2','KA_F','KA_3P'] },
+    { title: 'Poule A — Europa League',  matchIds: ['KA_EQF1','KA_EQF2','KA_EF','KA_E3P'] },
+    { title: 'Poule B — Champions',      matchIds: ['KB_QF1','KB_QF2','KB_F','KB_3P'] },
+    { title: 'Poule B — Europa League',  matchIds: ['KB_EQF1','KB_EQF2','KB_EF','KB_E3P'] }
   ];
 
   let html = '<div style="height:12px;"></div>';
@@ -1448,25 +1415,20 @@ function renderBracket() {
     section.matchIds.forEach(mid => {
       const m = DATA.matches.find(x => x.id === mid);
       if (!m) return;
-      const home = resolveTeam(m.home, null);
-      const away = resolveTeam(m.away, null);
+      const home = resolveTeam(m.home);
+      const away = resolveTeam(m.away);
       const isPlayed = m.status === 'played' || m.status === 'forfeit';
       let scoreText = '–';
-      if (isPlayed && m.home_score !== null) scoreText = m.home_score + ' – ' + m.away_score;
+      if (isPlayed && m.home_score != null) scoreText = m.home_score + ' – ' + m.away_score;
 
       const homeClass = home.team ? 'bracket-team' : 'bracket-team unknown';
       const awayClass = away.team ? 'bracket-team' : 'bracket-team unknown';
       const scoreClass = isPlayed ? 'bracket-score played' : 'bracket-score';
 
-      // Admin btn
       let adminBtn = '';
-      if (state.adminMode && !isPlayed) {
-        adminBtn = `<button class="btn-saisir" style="margin-left:8px;" onclick="toggleScoreForm('${m.id}',event)">Saisir</button>`;
-        // Formulaire injecté après
-      }
-
       let scoreFormHtml = '';
       if (state.adminMode && !isPlayed) {
+        adminBtn = `<button class="btn-saisir" style="margin-left:8px;" onclick="toggleScoreForm('${m.id}',event)">Saisir</button>`;
         scoreFormHtml = `
           <div class="score-form" id="form-${m.id}" style="padding:8px 10px 10px;border-top:1px solid var(--border);gap:8px;">
             <input class="score-input" type="number" min="0" max="99" id="score-home-${m.id}" placeholder="0">
@@ -1500,27 +1462,23 @@ function renderBracket() {
 }
 
 /* ------------------------------------------------------------------
-   RENDU ONGLET INFOS
+   INFOS
    ------------------------------------------------------------------ */
 function renderInfos() {
   document.getElementById('info-organizer').textContent = DATA.meta.organizer;
-  document.getElementById('info-date').textContent = DATA.meta.date;
-  document.getElementById('info-location').textContent = DATA.meta.location;
-  document.getElementById('info-updated').textContent = formatDate(DATA.meta.last_updated);
+  document.getElementById('info-date').textContent      = DATA.meta.date;
+  document.getElementById('info-location').textContent  = DATA.meta.location;
+  document.getElementById('info-updated').textContent   = formatDate(DATA.meta.last_updated);
   if (state.adminMode) {
     document.getElementById('btn-export').style.display = 'block';
-    document.getElementById('btn-reset-token').style.display = 'block';
   }
 }
 
-/* ------------------------------------------------------------------
-   EXPORT JSON (ADMIN)
-   ------------------------------------------------------------------ */
 function exportJSON() {
   const json = JSON.stringify(DATA, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
   a.href = url;
   a.download = 'tournoi-annecy-' + new Date().toISOString().slice(0,16).replace(/:/g,'-') + '.json';
   a.click();
@@ -1528,7 +1486,7 @@ function exportJSON() {
 }
 
 /* ------------------------------------------------------------------
-   MODE ADMIN — bouton connexion + modal mot de passe
+   AUTH ADMIN
    ------------------------------------------------------------------ */
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1545,10 +1503,6 @@ function openLoginModal() {
 
 function closeLoginModal() {
   document.getElementById('login-overlay').classList.remove('open');
-  // Réinitialiser le modal au step 1
-  document.getElementById('modal-step1').style.display = 'block';
-  document.getElementById('modal-step2').style.display = 'none';
-  document.getElementById('modal-box').querySelector('h2').textContent = 'Connexion Admin';
   document.getElementById('modal-pwd').value = '';
   document.getElementById('modal-error').textContent = '';
 }
@@ -1561,21 +1515,22 @@ async function confirmLogin() {
   const pwd = document.getElementById('modal-pwd').value.trim();
   if (!pwd) return;
   const hash = await sha256(pwd);
-  if (hash === state.ADMIN_HASH) {
-    if (!localStorage.getItem('gh_token')) {
-      // Première connexion sur cet appareil : demander le token
-      document.getElementById('modal-step1').style.display = 'none';
-      document.getElementById('modal-step2').style.display = 'block';
-      document.getElementById('modal-box').querySelector('h2').textContent = 'Token GitHub';
-      setTimeout(() => document.getElementById('modal-token').focus(), 100);
-    } else {
-      closeLoginModal();
-      activateAdmin();
-    }
-  } else {
+  if (hash !== state.ADMIN_HASH) {
     document.getElementById('modal-error').textContent = 'Mot de passe incorrect.';
     document.getElementById('modal-pwd').value = '';
     document.getElementById('modal-pwd').focus();
+    return;
+  }
+  // PIN local OK → authentifier via Firebase Auth pour autoriser les écritures
+  document.getElementById('modal-error').textContent = 'Connexion en cours…';
+  document.getElementById('btn-modal-confirm').disabled = true;
+  try {
+    await _auth.signInWithEmailAndPassword(ADMIN_EMAIL, ADMIN_PWD);
+    closeLoginModal();
+    activateAdmin();
+  } catch(e) {
+    document.getElementById('modal-error').textContent = 'Erreur : ' + e.message;
+    document.getElementById('btn-modal-confirm').disabled = false;
   }
 }
 
@@ -1583,91 +1538,19 @@ function activateAdmin() {
   state.adminMode = true;
   sessionStorage.setItem('admin_mode', 'true');
   document.getElementById('admin-badge').style.display = 'inline-block';
-  document.getElementById('btn-logout').style.display = 'inline-flex';
-  document.getElementById('btn-login').style.display = 'none';
+  document.getElementById('btn-logout').style.display  = 'inline-flex';
+  document.getElementById('btn-login').style.display   = 'none';
   renderActiveTab();
 }
 
-function saveToken() {
-  const token = document.getElementById('modal-token').value.trim();
-  if (!token || !token.startsWith('github_pat_')) {
-    document.getElementById('modal-token-error').textContent = 'Token invalide (doit commencer par github_pat_).';
-    return;
-  }
-  localStorage.setItem('gh_token', token);
-  closeLoginModal();
-  activateAdmin();
-}
-
-function skipToken() {
-  closeLoginModal();
-  activateAdmin();
-}
-
-function resetToken() {
-  localStorage.removeItem('gh_token');
-  logoutAdmin();
-  setTimeout(() => openLoginModal(), 100);
-}
-
-function logoutAdmin() {
+async function logoutAdmin() {
   state.adminMode = false;
   sessionStorage.removeItem('admin_mode');
   document.getElementById('admin-badge').style.display = 'none';
-  document.getElementById('btn-logout').style.display = 'none';
-  document.getElementById('btn-login').style.display = 'flex';
+  document.getElementById('btn-logout').style.display  = 'none';
+  document.getElementById('btn-login').style.display   = 'flex';
+  try { await _auth.signOut(); } catch(e) { /* silent */ }
   renderActiveTab();
-}
-
-/* ------------------------------------------------------------------
-   GITHUB API — push data.json après chaque score
-   ------------------------------------------------------------------ */
-async function pushToGitHub(matchId) {
-  const token = localStorage.getItem('gh_token');
-  if (!token) {
-    showToast('Token manquant — déconnecte-toi et reconnecte-toi pour le configurer', true);
-    return;
-  }
-  try {
-    const authHeaders = {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json'
-    };
-    const apiBase = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.file}`;
-    const metaRes = await fetch(apiBase, { headers: authHeaders });
-    if (!metaRes.ok) {
-      throw new Error('GET ' + metaRes.status + (metaRes.status === 401 ? ' — token invalide ou révoqué' : ''));
-    }
-    const meta = await metaRes.json();
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(DATA, null, 2))));
-    const pushRes = await fetch(apiBase, {
-      method: 'PUT',
-      headers: { ...authHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Score: ${matchId} — ${new Date().toLocaleTimeString('fr-FR')}`,
-        content,
-        sha: meta.sha
-      })
-    });
-    if (!pushRes.ok) {
-      throw new Error('PUT ' + pushRes.status);
-    }
-    showToast('✓ Score enregistré');
-  } catch(e) {
-    console.error('[Aidera] Push GitHub échoué:', e);
-    showToast('Sync échouée : ' + e.message, true);
-  }
-}
-
-function showToast(msg, isError = false) {
-  const old = document.getElementById('toast');
-  if (old) old.remove();
-  const t = document.createElement('div');
-  t.id = 'toast';
-  t.textContent = msg;
-  t.style.cssText = `position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:${isError ? '#DC2626' : '#059669'};color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:500;white-space:nowrap;pointer-events:none;transition:opacity 0.3s;`;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
 }
 
 /* ------------------------------------------------------------------
@@ -1676,73 +1559,24 @@ function showToast(msg, isError = false) {
 function formatDate(iso) {
   if (!iso) return '—';
   try {
-    const d = new Date(iso);
-    return d.toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return new Date(iso).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
   } catch(e) { return iso; }
 }
 
-/* ------------------------------------------------------------------
-   CHARGEMENT DATA (fetch data.json)
-   ------------------------------------------------------------------ */
-async function loadData() {
-  const res = await fetch('./data.json?t=' + Date.now());
-  if (!res.ok) throw new Error('data.json introuvable (' + res.status + ')');
-  return res.json();
-}
-
-async function refreshData() {
-  try {
-    DATA = await loadData();
-    state.phase = DATA.meta.current_phase;
-    detectPhase();
-    document.getElementById('last-updated-label').textContent = formatDate(DATA.meta.last_updated);
-    if (state.activeTab === 'matches')    renderMatches();
-    else if (state.activeTab === 'standings') renderStandings();
-    else if (state.activeTab === 'bracket')   renderBracket();
-    else if (state.activeTab === 'infos')     renderInfos();
-  } catch(e) {
-    console.warn('[OPTIM\'IA] Échec du rafraîchissement :', e);
-  }
+function showToast(msg, isError = false) {
+  const old = document.getElementById('toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'toast';
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:${isError ? '#DC2626' : '#059669'};color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:500;white-space:nowrap;pointer-events:none;`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 
 /* ------------------------------------------------------------------
-   INITIALISATION
+   LANCEMENT
    ------------------------------------------------------------------ */
-async function init() {
-  // Charger les données depuis data.json
-  try {
-    DATA = await loadData();
-  } catch(e) {
-    document.getElementById('matches-list').innerHTML = '<p style="padding:24px;color:var(--red)">Erreur : data.json introuvable. Vérifier le déploiement.</p>';
-    console.error('[OPTIM\'IA]', e);
-    return;
-  }
-
-  // Restaurer session admin
-  if (sessionStorage.getItem('admin_mode') === 'true') {
-    state.adminMode = true;
-    document.getElementById('admin-badge').style.display = 'inline-block';
-    document.getElementById('btn-logout').style.display = 'inline-flex';
-    document.getElementById('btn-login').style.display = 'none';
-  }
-
-  // Détection de phase
-  state.phase = DATA.meta.current_phase;
-  detectPhase();
-  detectPhase();
-
-  // Header
-  document.getElementById('last-updated-label').textContent = formatDate(DATA.meta.last_updated);
-  document.getElementById('header-title').textContent = DATA.meta.tournament_name;
-
-  // Rendu initial
-  renderMatches();
-
-  // Auto-refresh toutes les 60s (désactivé en mode admin pour ne pas écraser les saisies)
-  setInterval(() => { if (!state.adminMode) refreshData(); }, 60000);
-}
-
-// Lancer l'appli
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
